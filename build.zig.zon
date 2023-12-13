@@ -1,0 +1,28 @@
+.{
+    .name = "reg",
+    .version = "0.0.0",
+
+    // This field is optional.
+    // This is currently advisory only; Zig does not yet do anything
+    // with this value.
+    //.minimum_zig_version = "0.11.0",
+
+    // This field is optional.
+    // Each dependency must either provide a `url` and `hash`, or a `path`.
+    // `zig build --fetch` can be used to fetch all dependencies of a package, recursively.
+    // Once all dependencies are fetched, `zig build` no longer requires
+    // Internet connectivity.
+    .dependencies = .{
+        .libnl_tiny = .{
+            .url = "https://github.com/binarycraft007/libnl-tiny/archive/ae4c865863de9af3e1b9e4ddb5dec1c68cf073fb.tar.gz",
+            .hash = "1220bc733a127747c71ed01f99452e5d6b9a9d3a13b2ff3ff1e0ab1b4e3f42f24efc",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        //"LICENSE",
+        //"README.md",
+    },
+}
