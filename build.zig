@@ -8,7 +8,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     const exe = b.addExecutable(.{
-        .name = "reg",
+        .name = "wifi_reg",
         .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,
