@@ -4940,3 +4940,103 @@ pub const nl_parser_param = struct_nl_parser_param;
 pub const nl_cache_ops = struct_nl_cache_ops;
 pub const nl_cache_mngr = struct_nl_cache_mngr;
 pub const genl_family = struct_genl_family;
+
+const std = @import("std");
+const os = std.os;
+
+pub const handler_args = extern struct {
+    group: [*c]const u8 = null,
+    id: c_int = 0,
+};
+
+pub fn nl_get_multicast_id(sock: [*c]nl_sock, family: [*c]const u8, group: [*c]const u8) c_int {
+    var grp: handler_args = .{
+        .group = group,
+        .id = -@as(c_int, @intFromEnum(os.E.NOENT)),
+    };
+
+    const msg = nlmsg_alloc();
+    if (msg == null) return -@as(c_int, @intFromEnum(os.E.NOMEM));
+    defer nlmsg_free(msg);
+
+    const cb = nl_cb_alloc(NL_CB_DEFAULT);
+    if (cb == null) return -@as(c_int, @intFromEnum(os.E.NOMEM));
+    defer nl_cb_put(cb);
+
+    const ctrlid = genl_ctrl_resolve(sock, "nlctrl");
+    _ = genlmsg_put(msg, 0, 0, ctrlid, 0, 0, CTRL_CMD_GETFAMILY, 0);
+
+    var ret: c_int = -@as(c_int, @intFromEnum(os.E.NOBUFS));
+    _ = nla_put_string(msg, CTRL_ATTR_FAMILY_NAME, family);
+
+    ret = nl_send_auto_complete(sock, msg);
+    if (ret < 0) return ret;
+
+    ret = 1;
+    _ = nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &ret);
+    _ = nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &ret);
+    _ = nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, family_handler, &grp);
+    while (ret > 0) _ = nl_recvmsgs(sock, cb);
+
+    if (ret == 0) ret = grp.id;
+    return ret;
+}
+
+pub fn family_handler(msg: [*c]nl_msg, arg: ?*anyopaque) callconv(.C) c_int {
+    var grp: [*c]handler_args = @ptrCast(@alignCast(arg));
+    var tb: [CTRL_ATTR_MAX + 1][*c]nlattr = [1][*c]nlattr{null} ** (CTRL_ATTR_MAX + 1);
+    const gnlh: [*c]genlmsghdr = @ptrCast(@alignCast(nlmsg_data(nlmsg_hdr(msg))));
+    const mcgrp: [*c]nlattr = null;
+    _ = nla_parse(
+        @constCast(&tb),
+        CTRL_ATTR_MAX,
+        genlmsg_attrdata(gnlh, 0),
+        genlmsg_attrlen(gnlh, 0),
+        null,
+    );
+    if (tb[CTRL_ATTR_MCAST_GROUPS] == null) return NL_SKIP;
+    var pos: [*c]nlattr = mcgrp;
+    pos = @ptrCast(@alignCast(nla_data(tb[CTRL_ATTR_MCAST_GROUPS])));
+    var rem: c_int = 0;
+    rem = nla_len(tb[CTRL_ATTR_MCAST_GROUPS]);
+    while (nla_ok(pos, rem) > 0) : (pos = nla_next(pos, &rem)) {
+        const tb_mcgrp: [CTRL_ATTR_MCAST_GRP_MAX + 1][*c]nlattr = [1][*c]nlattr{null} ** (CTRL_ATTR_MCAST_GRP_MAX + 1);
+        _ = nla_parse(
+            @constCast(&tb_mcgrp),
+            CTRL_ATTR_MCAST_GRP_MAX,
+            @ptrCast(@alignCast(nla_data(mcgrp))),
+            nla_len(mcgrp),
+            null,
+        );
+        if (tb_mcgrp[CTRL_ATTR_MCAST_GRP_NAME] == null or tb_mcgrp[CTRL_ATTR_MCAST_GRP_ID] == null)
+            continue;
+        if (strncmp(nla_data(tb_mcgrp[CTRL_ATTR_MCAST_GRP_NAME]), grp.group, nla_len(tb_mcgrp[CTRL_ATTR_MCAST_GRP_NAME])))
+            continue;
+        grp.id = nla_get_u32(tb_mcgrp[CTRL_ATTR_MCAST_GRP_ID]);
+        break;
+    }
+
+    return NL_SKIP;
+}
+
+pub fn ack_handler(msg: [*c]nl_msg, arg: ?*anyopaque) callconv(.C) c_int {
+    _ = msg;
+    const ret: *c_int = @alignCast(@ptrCast(arg));
+    ret.* = 0;
+    return NL_STOP;
+}
+
+pub fn error_handler(nla: [*c]sockaddr_nl, err: [*c]nlmsgerr, arg: ?*anyopaque) callconv(.C) c_int {
+    _ = nla;
+    const ret: *c_int = @alignCast(@ptrCast(arg));
+    ret.* = err.*.@"error";
+    return NL_STOP;
+}
+
+pub fn no_seq_check(msg: [*c]nl_msg, arg: ?*anyopaque) callconv(.C) c_int {
+    _ = arg;
+    _ = msg;
+    return NL_OK;
+}
+
+pub const HandlerFn = *const fn ([*c]nl_msg, ?*anyopaque) callconv(.C) c_int;

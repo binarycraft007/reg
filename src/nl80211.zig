@@ -12,6 +12,7 @@ const __u64 = c_ulonglong;
 
 pub const State = @import("nl80211/State.zig");
 pub const Msg = @import("nl80211/Msg.zig");
+pub const Event = @import("nl80211/Event.zig");
 pub const NL80211_CMD_UNSPEC: c_int = 0;
 pub const NL80211_CMD_GET_WIPHY: c_int = 1;
 pub const NL80211_CMD_SET_WIPHY: c_int = 2;
