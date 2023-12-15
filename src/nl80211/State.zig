@@ -13,9 +13,7 @@ pub fn init() !State {
     if (sock == null) return error.NoMemory;
     errdefer c.nl_socket_free(sock);
     state.nl_sock = sock;
-    if (c.genl_connect(state.nl_sock) != 0) {
-        return error.NoLink;
-    }
+    if (c.genl_connect(state.nl_sock) != 0) return error.NoLink;
     _ = c.nl_socket_set_buffer_size(state.nl_sock, 8192, 8192);
     os.setsockopt(
         c.nl_socket_get_fd(state.nl_sock),
@@ -24,9 +22,7 @@ pub fn init() !State {
         &mem.toBytes(@as(c_int, 0)),
     ) catch {};
     state.nl80211_id = c.genl_ctrl_resolve(state.nl_sock, "nl80211");
-    if (state.nl80211_id < 0) {
-        return error.FileNotFound;
-    }
+    if (state.nl80211_id < 0) return error.FileNotFound;
     return state;
 }
 
