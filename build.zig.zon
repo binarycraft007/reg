@@ -14,8 +14,8 @@
     // Internet connectivity.
     .dependencies = .{
         .libnl_tiny = .{
-            .url = "https://github.com/binarycraft007/libnl-tiny/archive/ae4c865863de9af3e1b9e4ddb5dec1c68cf073fb.tar.gz",
-            .hash = "1220bc733a127747c71ed01f99452e5d6b9a9d3a13b2ff3ff1e0ab1b4e3f42f24efc",
+            .url = "https://github.com/binarycraft007/libnl-tiny/archive/1e46cc4851f348d33509a44be1da6a17df097224.tar.gz",
+            .hash = "12208ad611bbd9099fbe69e1667ee082c44bdab9a0b933fc33ea2d3249f1e8c550dc",
         },
     },
     .paths = .{

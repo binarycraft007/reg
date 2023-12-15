@@ -68,7 +68,6 @@ pub fn send(self: *Msg) !void {
 }
 
 fn finish_handler(msg: [*c]c.nl_msg, arg: ?*anyopaque) callconv(.C) c_int {
-    std.debug.print("finished handler\n", .{});
     _ = msg;
     const ret: *c_int = @alignCast(@ptrCast(arg));
     ret.* = 0;

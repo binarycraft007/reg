@@ -14,33 +14,7 @@ pub const InitOptions = struct {
 };
 
 pub fn init(options: InitOptions) !Event {
-    var mcid = c.nl_get_multicast_id(options.state.nl_sock, "nl80211", "config");
-    switch (os.errno(mcid)) {
-        .SUCCESS => {},
-        .FAULT => unreachable,
-        .INVAL => unreachable,
-        .ACCES => return error.AccessDenied,
-        .FBIG => return error.FileTooBig,
-        .OVERFLOW => return error.FileTooBig,
-        .ISDIR => return error.IsDir,
-        .LOOP => return error.SymLinkLoop,
-        .MFILE => return error.ProcessFdQuotaExceeded,
-        .NAMETOOLONG => return error.NameTooLong,
-        .NFILE => return error.SystemFdQuotaExceeded,
-        .NODEV => return error.NoDevice,
-        .NOENT => return error.FileNotFound,
-        .NOMEM => return error.SystemResources,
-        .NOSPC => return error.NoSpaceLeft,
-        .NOTDIR => return error.NotDir,
-        .PERM => return error.AccessDenied,
-        .EXIST => return error.PathAlreadyExists,
-        .BUSY => return error.DeviceBusy,
-        else => |err| return os.unexpectedErrno(err),
-    }
-    if (c.nl_socket_add_membership(options.state.nl_sock, mcid) != 0)
-        return error.AddMembershipConfig;
-
-    mcid = c.nl_get_multicast_id(options.state.nl_sock, "nl80211", "regulatory");
+    const mcid = c.nl_get_multicast_id(options.state.nl_sock, "nl80211", "regulatory");
     switch (os.errno(mcid)) {
         .SUCCESS => {},
         .FAULT => unreachable,
