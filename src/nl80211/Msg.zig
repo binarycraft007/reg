@@ -51,6 +51,14 @@ pub fn put_string(self: *Msg, attr_type: c_int, value: [*c]const u8) void {
     _ = c.nla_put_string(self.msg, attr_type, value);
 }
 
+pub fn nest_start(self: *Msg, attr_type: c_int) [*c]c.nlattr {
+    return c.nla_nest_start(self.msg, attr_type);
+}
+
+pub fn nest_end(self: *Msg, start: [*c]c.nlattr) void {
+    _ = c.nla_nest_end(self.msg, start);
+}
+
 pub fn send(self: *Msg) !void {
     const cb = c.nl_cb_alloc(c.NL_CB_DEFAULT);
     if (cb == null) return error.NoMemory;
