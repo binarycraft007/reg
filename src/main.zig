@@ -28,7 +28,7 @@ fn waitForDriverReady() !void {
     // Function times out after 10 seconds
     const count = (POLL_DRIVER_MAX_TIME_MS * 1000) / POLL_DRIVER_DURATION_US;
     for (0..count) |_| {
-        const file_maybe = std.fs.openFileAbsolute("/sys/class/net/wlan0", .{});
+        const file_maybe = std.fs.openDirAbsolute("/sys/class/net/wlan0", .{});
         if (file_maybe) |file| {
             file.close();
             return;
