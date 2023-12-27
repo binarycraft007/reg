@@ -7,14 +7,36 @@ const qca = @import("qca-vendor.zig");
 const bcm = @import("bcm-vendor.zig");
 const nl80211 = @import("nl80211.zig");
 
+const POLL_DRIVER_DURATION_US = 100000;
+const POLL_DRIVER_MAX_TIME_MS = 10000;
+const target_country_code = "US";
+
 pub fn main() !void {
+    try waitForDriverReady();
     var state = try nl80211.State.init();
     defer state.deinit();
+    setCountryCode(state, target_country_code);
     var event = try nl80211.Event.init(.{
         .state = state,
         .handlerFn = handlerFunc,
     });
     try event.listen();
+}
+
+fn waitForDriverReady() !void {
+    // This function will wait to make sure basic client netdev is created
+    // Function times out after 10 seconds
+    const count = (POLL_DRIVER_MAX_TIME_MS * 1000) / POLL_DRIVER_DURATION_US;
+    for (0..count) |_| {
+        const file_maybe = std.fs.openFileAbsolute("/sys/class/net/wlan0", .{});
+        if (file_maybe) |file| {
+            file.close();
+            return;
+        } else |_| {
+            std.time.sleep(std.time.ns_per_us * POLL_DRIVER_DURATION_US);
+        }
+    }
+    return error.TimeOut;
 }
 
 fn handlerFunc(msg: [*c]c.nl_msg, arg: ?*anyopaque) callconv(.C) c_int {
@@ -37,9 +59,8 @@ fn handlerFunc(msg: [*c]c.nl_msg, arg: ?*anyopaque) callconv(.C) c_int {
             switch (reg_type) {
                 nl80211.NL80211_REGDOM_TYPE_COUNTRY => {
                     const country = c.nla_get_string(tb[nl80211.NL80211_ATTR_REG_ALPHA2]);
-                    if (!mem.eql(u8, mem.span(country), "US")) {
-                        setCountryCodeQca(event.state, "US") catch return -1;
-                        setCountryCodeBcm(event.state, "US") catch return -1;
+                    if (!mem.eql(u8, mem.span(country), target_country_code)) {
+                        setCountryCode(event.state, target_country_code);
                     }
                 },
                 else => {},
@@ -48,6 +69,11 @@ fn handlerFunc(msg: [*c]c.nl_msg, arg: ?*anyopaque) callconv(.C) c_int {
         else => {},
     }
     return 0;
+}
+
+fn setCountryCode(state: nl80211.State, country_code: [*c]const u8) void {
+    setCountryCodeQca(state, country_code) catch {};
+    setCountryCodeBcm(state, country_code) catch {};
 }
 
 fn setCountryCodeQca(state: nl80211.State, country_code: [*c]const u8) !void {
