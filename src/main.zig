@@ -36,6 +36,7 @@ fn waitForDriverReady() !void {
         defer file.close();
         const data = try file.reader().readUntilDelimiter(&buf, '\n');
         if (mem.eql(u8, data, "UP")) return;
+        std.time.sleep(std.time.ns_per_us * POLL_DRIVER_DURATION_US);
         return;
     }
     return error.TimeOut;
