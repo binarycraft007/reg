@@ -6,6 +6,7 @@ const c = @import("c.zig");
 const qca = @import("qca-vendor.zig");
 const bcm = @import("bcm-vendor.zig");
 const nl80211 = @import("nl80211.zig");
+const ethtool = @import("ethtool.zig");
 
 const POLL_DRIVER_DURATION_US = 100000;
 const POLL_DRIVER_MAX_TIME_MS = 10000;
@@ -75,8 +76,12 @@ fn handlerFunc(msg: [*c]c.nl_msg, arg: ?*anyopaque) callconv(.C) c_int {
 }
 
 fn setCountryCode(state: nl80211.State, country_code: [*c]const u8) void {
-    setCountryCodeQca(state, country_code) catch {};
-    setCountryCodeBcm(state, country_code) catch {};
+    const drv_info = ethtool.DriverInfo.get("wlan0") catch return;
+    if (mem.eql(u8, &drv_info.driver, "cnss_pci")) {
+        setCountryCodeQca(state, country_code) catch {};
+    } else {
+        setCountryCodeBcm(state, country_code) catch {};
+    }
 }
 
 fn setCountryCodeQca(state: nl80211.State, country_code: [*c]const u8) !void {

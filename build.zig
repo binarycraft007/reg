@@ -3,17 +3,16 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const nl_dep = b.dependency("libnl_tiny", .{
-        .target = target,
-        .optimize = optimize,
-    });
     const exe = b.addExecutable(.{
         .name = "wifi_reg",
         .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,
     });
-    exe.linkLibrary(nl_dep.artifact("nl-tiny"));
+    exe.root_module.addImport("nl", b.dependency("libnl_tiny", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("nl"));
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);
