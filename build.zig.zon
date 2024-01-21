@@ -1,5 +1,5 @@
 .{
-    .name = "reg",
+    .name = "wifi_reg",
     .version = "0.0.0",
 
     // This field is optional.
@@ -14,8 +14,8 @@
     // Internet connectivity.
     .dependencies = .{
         .libnl_tiny = .{
-            .url = "https://github.com/binarycraft007/libnl-tiny/archive/1e46cc4851f348d33509a44be1da6a17df097224.tar.gz",
-            .hash = "12208ad611bbd9099fbe69e1667ee082c44bdab9a0b933fc33ea2d3249f1e8c550dc",
+            .url = "git+https://github.com/binarycraft007/libnl-tiny#e6d34d32b9f329d0649708b8b31f3c20d22e1c12",
+            .hash = "1220d8675befe16a3cac6c50c902d0fd70eb5b3e61bc5a6ed3d1506964a7a8be7102",
         },
     },
     .paths = .{
